@@ -1,46 +1,54 @@
 package main
 
 import (
+	_ "database/sql"
 	"fmt"
 	"html/template"
 	"net/http"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type User struct {
-	Name       string
-	age        uint16
-	money      int16
-	avg_grades float64
-	happiness  float64
 }
 
-func (u User) getAllInfo() string {
-	return fmt.Sprintf("User name is: %s. "+
-		"He is %d and he had money equal: %d", u.Name, u.age, u.money)
+// r *http.Request - содержит информацию о пришедшем запросе
+
+func index_page(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/index.html", "templates/header.html", "templates/footer.html")
+
+	if err != nil {
+		fmt.Fprintf(w, err.Error())
+	}
+
+	t.ExecuteTemplate(w, "index", nil) // этот метод нужен для динамического подлючения шаблонов
 }
 
-func (u *User) setNewName(newName string) {
-	u.Name = newName
+func create_page(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/create.html", "templates/header.html", "templates/footer.html")
+
+	if err != nil {
+		fmt.Fprintf(w, err.Error())
+	}
+
+	t.ExecuteTemplate(w, "create", nil) // этот метод нужен для динамического подлючения шаблонов
 }
 
-func home_page(w http.ResponseWriter, r *http.Request) {
-	bob := User{"Bob", 25, -50, 4.2, 0.8}
+func save_article(w http.ResponseWriter, r *http.Request) {
+	title := r.FormValue("title")         // можно забрать значение из формы, название должно быть равно name контрола
+	anons := r.FormValue("anons")         // можно забрать значение из формы, название должно быть равно name контрола
+	full_text := r.FormValue("full_text") // можно забрать значение из формы, название должно быть равно name контрола
 
-	tmpl, _ := template.ParseFiles("templates/home_page.html")
-	tmpl.Execute(w, bob)
 }
 
-func contacts_page(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Contacts page!")
-}
-
-func handleRequest() {
-	http.HandleFunc("/", home_page)
-	http.HandleFunc("/contacts", contacts_page)
-	http.ListenAndServe(":8888", nil)
-
+func handleFunc() {
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
+	http.HandleFunc("/", index_page) // По умолчанию, если не будет найдено страници go откроет этот адрес
+	http.HandleFunc("/create", create_page)
+	http.HandleFunc("/save_article", save_article)
+	http.ListenAndServe(":8080", nil)
 }
 
 func main() {
-	handleRequest()
+	handleFunc()
 }
